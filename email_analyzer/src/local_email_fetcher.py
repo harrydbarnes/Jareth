@@ -1,6 +1,10 @@
 import datetime
 import win32com.client
 from typing import List, Dict, Any, Optional
+import os
+
+OL_FOLDER_INBOX = 6
+OL_MAIL_ITEM = 43
 
 class LocalEmailFetcher:
     def __init__(self):
@@ -30,10 +34,10 @@ class LocalEmailFetcher:
         try:
             # Default to Inbox if not specified or "Inbox"
             if folder_name.lower() == "inbox":
-                folder = self.namespace.GetDefaultFolder(6) # 6 is olFolderInbox
+                folder = self.namespace.GetDefaultFolder(OL_FOLDER_INBOX)
             else:
                 # Try to find the folder in the default store
-                default_folder = self.namespace.GetDefaultFolder(6)
+                default_folder = self.namespace.GetDefaultFolder(OL_FOLDER_INBOX)
                 parent = default_folder.Parent
                 folder = self._find_folder(parent, folder_name)
                 if not folder:
@@ -50,26 +54,48 @@ class LocalEmailFetcher:
         return emails
 
     def _find_folder(self, parent_folder, folder_name):
-        try:
-            folders = parent_folder.Folders
-            for folder in folders:
-                if folder.Name == folder_name:
-                    return folder
-        except Exception:
-            pass
-        return None
+        """
+        Recursively finds a folder by name or path (e.g., "Archive/2023").
+        """
+        # Handle path separators
+        path_parts = folder_name.replace("\\", "/").split("/")
+
+        current_parent = parent_folder
+        target_folder = None
+
+        for part in path_parts:
+            if not part:
+                continue
+
+            found_sub = None
+            try:
+                for folder in current_parent.Folders:
+                    if folder.Name == part:
+                        found_sub = folder
+                        break
+            except Exception as e:
+                 print(f"Warning: Error while searching for folder '{part}' in '{getattr(current_parent, 'Name', 'Unknown')}': {e}")
+                 return None
+
+            if found_sub:
+                current_parent = found_sub
+                target_folder = found_sub
+            else:
+                return None
+
+        return target_folder
 
     def _process_folder(self, folder, recursive, cutoff_date, emails_list):
         items = folder.Items
         try:
             items.Sort("[ReceivedTime]", True) # Descending
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Could not sort items in folder '{folder.Name}'. Performance may be affected. Error: {e}")
 
         for item in items:
             try:
-                # Check if it's a MailItem (Class 43)
-                if item.Class != 43:
+                # Check if it's a MailItem
+                if item.Class != OL_MAIL_ITEM:
                     continue
 
                 # Check date
@@ -97,5 +123,8 @@ class LocalEmailFetcher:
                 continue
 
         if recursive:
-            for subfolder in folder.Folders:
-                self._process_folder(subfolder, True, cutoff_date, emails_list)
+            try:
+                for subfolder in folder.Folders:
+                    self._process_folder(subfolder, True, cutoff_date, emails_list)
+            except Exception as e:
+                 print(f"Warning: Error accessing subfolders of '{folder.Name}': {e}")

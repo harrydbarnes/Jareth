@@ -128,37 +128,24 @@ class EmailAnalyzerGUI:
         except Exception as e:
             self.root.after(0, self.show_error, str(e))
 
+    def _display_section(self, title: str, icon: str, items: list):
+        """Helper to display a section of results in the text widget."""
+        self.results_text.insert(tk.END, f"{icon} {title}\n", "subheader")
+        if items:
+            for item, ref in items:
+                self.results_text.insert(tk.END, f"• {item}\n", "bullet")
+                self.results_text.insert(tk.END, f"  {ref}\n\n", "email_ref")
+        else:
+            self.results_text.insert(tk.END, "  No items found.\n\n", "bullet")
+
     def display_results(self, todos, deadlines, mentions):
         self.results_text.config(state='normal')
-        
+
         self.results_text.insert(tk.END, "Analysis Results\n\n", "header")
 
-        # To-Dos
-        self.results_text.insert(tk.END, "🔴 Outstanding Tasks / To-Dos\n", "subheader")
-        if todos:
-            for item, ref in todos:
-                self.results_text.insert(tk.END, f"• {item}\n", "bullet")
-                self.results_text.insert(tk.END, f"  {ref}\n\n", "email_ref")
-        else:
-            self.results_text.insert(tk.END, "  No tasks found.\n\n", "bullet")
-
-        # Deadlines
-        self.results_text.insert(tk.END, "⏰ Upcoming Deadlines\n", "subheader")
-        if deadlines:
-            for item, ref in deadlines:
-                self.results_text.insert(tk.END, f"• {item}\n", "bullet")
-                self.results_text.insert(tk.END, f"  {ref}\n\n", "email_ref")
-        else:
-            self.results_text.insert(tk.END, "  No deadlines found.\n\n", "bullet")
-
-        # Mentions
-        self.results_text.insert(tk.END, "📣 Name Mentions\n", "subheader")
-        if mentions:
-            for item, ref in mentions:
-                self.results_text.insert(tk.END, f"• {item}\n", "bullet")
-                self.results_text.insert(tk.END, f"  {ref}\n\n", "email_ref")
-        else:
-            self.results_text.insert(tk.END, "  No mentions found.\n\n", "bullet")
+        self._display_section("Outstanding Tasks / To-Dos", "🔴", todos)
+        self._display_section("Upcoming Deadlines", "⏰", deadlines)
+        self._display_section("Name Mentions", "📣", mentions)
 
         self.results_text.config(state='disabled')
         self.status_lbl.config(text=f"Analysis Complete. Found {len(todos)} tasks, {len(deadlines)} deadlines, {len(mentions)} mentions.")
