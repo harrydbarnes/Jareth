@@ -7,13 +7,18 @@ import logging
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
+OL_FOLDER_SENT_MAIL = 5
 OL_FOLDER_INBOX = 6
 OL_MAIL_ITEM = 43
 
 class LocalEmailFetcher:
     def __init__(self):
         try:
-            self.outlook = win32com.client.Dispatch("Outlook.Application")
+            try:
+                self.outlook = win32com.client.GetActiveObject("Outlook.Application")
+            except Exception:
+                self.outlook = win32com.client.Dispatch("Outlook.Application")
+
             self.namespace = self.outlook.GetNamespace("MAPI")
         except Exception as e:
             logger.error(f"Failed to connect to Outlook: {e}")
@@ -41,6 +46,8 @@ class LocalEmailFetcher:
             # Default to Inbox if not specified or "Inbox"
             if folder_name.lower() == "inbox":
                 folder = self.namespace.GetDefaultFolder(OL_FOLDER_INBOX)
+            elif folder_name.lower() == "sent items":
+                folder = self.namespace.GetDefaultFolder(OL_FOLDER_SENT_MAIL)
             else:
                 # Try to find the folder in the default store
                 default_folder = self.namespace.GetDefaultFolder(OL_FOLDER_INBOX)
@@ -100,6 +107,18 @@ class LocalEmailFetcher:
     def _process_folder(self, folder, recursive, cutoff_date, emails_list):
         items = folder.Items
         sorted_success = False
+
+        # Attempt to Restrict by date first for performance
+        try:
+            cutoff_str = cutoff_date.strftime('%m/%d/%Y %H:%M')
+            # Using simple format, hoping system locale accepts it or OLE handles it.
+            # If it fails, we fall back to manual filtering.
+            filtered_items = items.Restrict(f"[ReceivedTime] >= '{cutoff_str}'")
+            items = filtered_items
+        except Exception as e:
+            logger.warning(f"Could not Restrict items in folder '{folder.Name}'. Falling back to manual filtering. Error: {e}")
+            # items remains folder.Items (all items)
+
         try:
             items.Sort("[ReceivedTime]", True) # Descending
             sorted_success = True
@@ -114,13 +133,6 @@ class LocalEmailFetcher:
 
                 # Check date
                 received_time = item.ReceivedTime
-
-                # Handle timezone awareness robustly
-                # Convert both to naive local time for comparison, or ensure both are aware.
-                # ReceivedTime from Outlook usually has timezone info if the system is configured correctly, or might be aware.
-                # cutoff_date is naive local time.
-                # Safest approach for local machine tool: Convert received_time to naive local.
-                # If it has tzinfo, astimezone(None) converts to local system time, then replace(tzinfo=None) makes it naive.
 
                 if received_time.tzinfo is not None:
                      received_time = received_time.astimezone(None).replace(tzinfo=None)

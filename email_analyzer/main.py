@@ -25,6 +25,9 @@ class EmailAnalyzerGUI:
         self.root.title("Email Analyzer")
         self.root.geometry("800x600")
 
+        self.analysis_thread = None
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         # --- Settings Section ---
         settings_frame = ttk.LabelFrame(root, text="Settings", padding="10")
         settings_frame.pack(fill="x", padx=10, pady=5)
@@ -91,7 +94,8 @@ class EmailAnalyzerGUI:
         self.results_text.config(state='disabled')
 
         # Run in a separate thread to keep UI responsive
-        threading.Thread(target=self.run_analysis, args=(user_name,), daemon=True).start()
+        self.analysis_thread = threading.Thread(target=self.run_analysis, args=(user_name,), daemon=True)
+        self.analysis_thread.start()
 
     def run_analysis(self, user_name):
         try:
@@ -159,6 +163,13 @@ class EmailAnalyzerGUI:
         messagebox.showerror("Error", message)
         self.status_lbl.config(text="Error occurred.")
         self.analyze_btn.config(state="normal")
+
+    def on_closing(self):
+        """Handles the window close event."""
+        if self.analysis_thread and self.analysis_thread.is_alive():
+            messagebox.showwarning("Analysis in Progress", "Please wait for the analysis to complete before closing.")
+            return
+        self.root.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
