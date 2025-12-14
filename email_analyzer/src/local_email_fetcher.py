@@ -1,7 +1,7 @@
 import datetime
 import win32com.client
-from typing import List, Dict, Any, Optional
-import os
+from typing import List, Dict, Any
+
 import logging
 
 # Configure logger for this module
