@@ -110,7 +110,7 @@ class LocalEmailFetcher:
 
         # Attempt to Restrict by date first for performance
         try:
-            cutoff_str = cutoff_date.strftime('%m/%d/%Y %H:%M')
+            cutoff_str = cutoff_date.strftime('%m/%d/%Y %I:%M %p')
             # Using simple format, hoping system locale accepts it or OLE handles it.
             # If it fails, we fall back to manual filtering.
             filtered_items = items.Restrict(f"[ReceivedTime] >= '{cutoff_str}'")
