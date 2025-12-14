@@ -1,3 +1,1 @@
-azure-identity
-microsoft-graph-core
-msgraph-sdk
+pywin32
