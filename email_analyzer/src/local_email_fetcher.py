@@ -154,7 +154,7 @@ class LocalEmailFetcher:
 
             except Exception as e:
                 # Skip individual items that cause errors
-                logger.error(f"Error processing item: {e}")
+                logger.error(f"Error processing item with subject '{getattr(item, 'Subject', '[unretrievable]')}: {e}")
                 continue
 
         if recursive:

@@ -134,6 +134,7 @@ class EmailAnalyzerGUI:
             self.root.after(0, self.display_results, todos, deadlines, mentions)
 
         except Exception as e:
+            logging.exception("An error occurred during analysis")
             self.root.after(0, self.show_error, str(e))
 
     def _display_section(self, title: str, icon: str, items: list):
