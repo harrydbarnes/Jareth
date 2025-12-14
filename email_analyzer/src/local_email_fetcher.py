@@ -89,7 +89,7 @@ class LocalEmailFetcher:
             found_sub = None
             try:
                 for folder in current_parent.Folders:
-                    if folder.Name == part:
+                    if folder.Name.lower() == part.lower():
                         found_sub = folder
                         break
             except Exception as e:
