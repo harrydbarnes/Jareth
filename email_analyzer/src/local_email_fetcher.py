@@ -74,7 +74,7 @@ class LocalEmailFetcher:
 
     def _find_folder(self, parent_folder, folder_name):
         """
-        Recursively finds a folder by name or path (e.g., "Archive/2023").
+        Finds a folder by name or path (e.g., "Archive/2023").
         """
         # Handle path separators
         path_parts = folder_name.replace("\\", "/").split("/")
