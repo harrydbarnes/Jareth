@@ -38,7 +38,7 @@ class EmailAnalyzerGUI:
         ttk.Entry(settings_frame, textvariable=self.user_name_var, width=30).grid(row=0, column=1, sticky="w", padx=5, pady=5)
 
         # Row 1: Folder Selection
-        ttk.Label(settings_frame, text="Folder:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(settings_frame, text="Folder (or path e.g. 'Inbox/MySubfolder'):").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         self.folder_var = tk.StringVar(value="Inbox")
         folder_combo = ttk.Combobox(settings_frame, textvariable=self.folder_var, values=["Inbox", "Sent Items"])
         folder_combo.grid(row=1, column=1, sticky="w", padx=5, pady=5)
