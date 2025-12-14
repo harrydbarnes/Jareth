@@ -116,7 +116,7 @@ class EmailAnalyzerGUI:
                 body = email.get("body", "")
 
                 # Helper for formatting the reference
-                ref = f"[Subject: {subject}]"
+                ref = f"[Subject: {(subject[:75] + '...') if len(subject) > 75 else subject}]"
 
                 found_todos = find_todos(body)
                 for t in found_todos:
