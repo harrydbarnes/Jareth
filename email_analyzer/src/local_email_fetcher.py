@@ -135,7 +135,7 @@ class LocalEmailFetcher:
                 received_time = item.ReceivedTime
 
                 if received_time.tzinfo is not None:
-                     received_time = received_time.astimezone(None).replace(tzinfo=None)
+                    received_time = received_time.astimezone(None).replace(tzinfo=None)
 
                 if received_time < cutoff_date:
                     if sorted_success:
