@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 try:
     from src.local_email_fetcher import LocalEmailFetcher
-    from src.insight_analyzer import find_todos, find_deadlines, find_name_mentions
+    from src.insight_analyzer import find_todos, find_deadlines, find_name_mentions, split_sentences
 except ImportError as e:
     messagebox.showerror("Import Error", f"Failed to import modules: {e}")
     sys.exit(1)
@@ -115,18 +115,21 @@ class EmailAnalyzerGUI:
                 subject = email.get("subject", "(No Subject)")
                 body = email.get("body", "")
 
+                # Split sentences once
+                sentences = split_sentences(body)
+
                 # Helper for formatting the reference
                 ref = f"[Subject: {(subject[:75] + '...') if len(subject) > 75 else subject}]"
 
-                found_todos = find_todos(body)
+                found_todos = find_todos(sentences)
                 for t in found_todos:
                     todos.append((t, ref))
 
-                found_deadlines = find_deadlines(body)
+                found_deadlines = find_deadlines(sentences)
                 for d in found_deadlines:
                     deadlines.append((d, ref))
 
-                found_mentions = find_name_mentions(body, user_name)
+                found_mentions = find_name_mentions(sentences, user_name)
                 for m in found_mentions:
                     mentions.append((m, ref))
 
