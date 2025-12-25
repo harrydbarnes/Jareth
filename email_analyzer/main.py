@@ -68,6 +68,8 @@ class EmailAnalyzerGUI:
         self.status_lbl = ttk.Label(action_frame, text="Ready")
         self.status_lbl.pack(side="left", padx=10)
 
+        self.progress = ttk.Progressbar(action_frame, mode='indeterminate')
+
         # --- Results Section ---
         results_frame = ttk.LabelFrame(root, text="Results", padding="10")
         results_frame.pack(fill="both", expand=True, padx=10, pady=5)
@@ -89,6 +91,8 @@ class EmailAnalyzerGUI:
 
         self.analyze_btn.config(state="disabled")
         self.status_lbl.config(text="Analyzing... This may take a moment.")
+        self.progress.pack(side="left", padx=10)
+        self.progress.start()
         self.results_text.config(state='normal')
         self.results_text.delete(1.0, tk.END)
         self.results_text.config(state='disabled')
@@ -151,6 +155,8 @@ class EmailAnalyzerGUI:
             self.results_text.insert(tk.END, "  No items found.\n\n", "bullet")
 
     def display_results(self, todos, deadlines, mentions):
+        self.progress.stop()
+        self.progress.pack_forget()
         self.results_text.config(state='normal')
 
         self.results_text.insert(tk.END, "Analysis Results\n\n", "header")
@@ -164,6 +170,8 @@ class EmailAnalyzerGUI:
         self.analyze_btn.config(state="normal")
 
     def show_error(self, message):
+        self.progress.stop()
+        self.progress.pack_forget()
         messagebox.showerror("Error", message)
         self.status_lbl.config(text="Error occurred.")
         self.analyze_btn.config(state="normal")
