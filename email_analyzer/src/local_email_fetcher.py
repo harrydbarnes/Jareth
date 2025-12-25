@@ -154,7 +154,13 @@ class LocalEmailFetcher:
 
             except Exception as e:
                 # Skip individual items that cause errors
-                logger.error(f"Error processing item with subject '{getattr(item, 'Subject', '[unretrievable]')}: {e}")
+                # Security: Avoid logging the full subject as it may contain sensitive information.
+                try:
+                    item_identifier = f"EntryID: {str(item.EntryID)[:20]}..."
+                except Exception:
+                    item_identifier = "Unknown ID"
+
+                logger.error(f"Error processing item ({item_identifier}): {e}")
                 continue
 
         if recursive:
