@@ -3,14 +3,37 @@ This module provides functions to analyze email content and extract
 actionable insights such as to-do items, deadlines, and name mentions.
 """
 import re
-from typing import List
+from typing import List, Union
 
-def find_todos(email_body: str) -> List[str]:
+# Compile regex at module level to avoid recompilation and reuse across functions
+# Split email into sentences. A more robust sentence tokenizer could be used for complex cases.
+# This basic split works for many common email formats.
+SENTENCE_SPLIT_REGEX = re.compile(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s')
+
+def split_sentences(text: str) -> List[str]:
+    """
+    Splits text into sentences using a regex.
+    """
+    if not text:
+        return []
+    return SENTENCE_SPLIT_REGEX.split(text)
+
+def _ensure_sentences(email_body_or_sentences: Union[str, List[str]]) -> List[str]:
+    """
+    Helper to ensure we have a list of sentences.
+    """
+    if isinstance(email_body_or_sentences, list):
+        return email_body_or_sentences
+    if isinstance(email_body_or_sentences, str):
+        return split_sentences(email_body_or_sentences)
+    raise TypeError(f"Expected str or list, but got {type(email_body_or_sentences).__name__}")
+
+def find_todos(email_body: Union[str, List[str]]) -> List[str]:
     """
     Identifies potential to-do items from the email body text.
 
     Args:
-        email_body: The text content of the email.
+        email_body: The text content of the email or a list of sentences.
 
     Returns:
         A list of sentences or lines identified as potential to-do items.
@@ -26,9 +49,7 @@ def find_todos(email_body: str) -> List[str]:
     ]
     
     found_todos: List[str] = []
-    # Split email into sentences. A more robust sentence tokenizer could be used for complex cases.
-    # This basic split works for many common email formats.
-    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s', email_body)
+    sentences = _ensure_sentences(email_body)
 
     for sentence in sentences:
         if not sentence.strip():
@@ -39,12 +60,12 @@ def find_todos(email_body: str) -> List[str]:
                 break # Avoid adding the same sentence multiple times if it contains multiple keywords
     return found_todos
 
-def find_deadlines(email_body: str) -> List[str]:
+def find_deadlines(email_body: Union[str, List[str]]) -> List[str]:
     """
     Identifies mentions of potential deadlines from the email body text.
 
     Args:
-        email_body: The text content of the email.
+        email_body: The text content of the email or a list of sentences.
 
     Returns:
         A list of sentences or lines identified as mentioning a potential deadline.
@@ -71,7 +92,7 @@ def find_deadlines(email_body: str) -> List[str]:
     ]
 
     found_deadlines: List[str] = []
-    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s', email_body)
+    sentences = _ensure_sentences(email_body)
 
     for sentence in sentences:
         if not sentence.strip():
@@ -89,12 +110,12 @@ def find_deadlines(email_body: str) -> List[str]:
     
     return found_deadlines
 
-def find_name_mentions(email_body: str, user_name: str) -> List[str]:
+def find_name_mentions(email_body: Union[str, List[str]], user_name: str) -> List[str]:
     """
     Finds sentences where a specific user_name is mentioned.
 
     Args:
-        email_body: The text content of the email.
+        email_body: The text content of the email or a list of sentences.
         user_name: The name to search for (case-insensitive).
 
     Returns:
@@ -109,7 +130,7 @@ def find_name_mentions(email_body: str, user_name: str) -> List[str]:
     # Escape the user_name in case it contains special regex characters
     pattern = r'\b' + re.escape(user_name) + r'\b'
     
-    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s', email_body)
+    sentences = _ensure_sentences(email_body)
 
     for sentence in sentences:
         if not sentence.strip():
