@@ -156,7 +156,7 @@ class LocalEmailFetcher:
                 # Skip individual items that cause errors
                 # Security: Avoid logging the full subject as it may contain sensitive information.
                 try:
-                    item_identifier = f"EntryID: {item.EntryID[:20]}..."
+                    item_identifier = f"EntryID: {str(item.EntryID)[:20]}..."
                 except Exception:
                     item_identifier = "Unknown ID"
 
