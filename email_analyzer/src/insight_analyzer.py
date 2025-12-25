@@ -24,7 +24,9 @@ def _ensure_sentences(email_body_or_sentences: Union[str, List[str]]) -> List[st
     """
     if isinstance(email_body_or_sentences, list):
         return email_body_or_sentences
-    return split_sentences(email_body_or_sentences)
+    if isinstance(email_body_or_sentences, str):
+        return split_sentences(email_body_or_sentences)
+    raise TypeError(f"Expected str or list, but got {type(email_body_or_sentences).__name__}")
 
 def find_todos(email_body: Union[str, List[str]]) -> List[str]:
     """
