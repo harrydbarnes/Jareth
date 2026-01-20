@@ -38,7 +38,7 @@ class EmailAnalyzerGUI:
         self.user_name_var = tk.StringVar()
         self.name_entry = ttk.Entry(settings_frame, textvariable=self.user_name_var, width=30)
         self.name_entry.grid(row=0, column=1, sticky="w", padx=5, pady=5)
-        self.name_entry.bind("<Return>", lambda event: self.start_analysis())
+        self.name_entry.bind("<Return>", self.start_analysis)
 
         # Row 1: Folder Selection
         ttk.Label(settings_frame, text="Folder (or path e.g. 'Inbox/MySubfolder'):").grid(row=1, column=0, sticky="w", padx=5, pady=5)
