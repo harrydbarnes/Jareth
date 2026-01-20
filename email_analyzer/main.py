@@ -35,13 +35,16 @@ class EmailAnalyzerGUI:
         # Row 0: User Name
         ttk.Label(settings_frame, text="Your Name (for mentions):").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self.user_name_var = tk.StringVar()
-        ttk.Entry(settings_frame, textvariable=self.user_name_var, width=30).grid(row=0, column=1, sticky="w", padx=5, pady=5)
+        self.name_entry = ttk.Entry(settings_frame, textvariable=self.user_name_var, width=30)
+        self.name_entry.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+        self.name_entry.bind("<Return>", lambda event: self.start_analysis())
 
         # Row 1: Folder Selection
         ttk.Label(settings_frame, text="Folder (or path e.g. 'Inbox/MySubfolder'):").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         self.folder_var = tk.StringVar(value="Inbox")
         folder_combo = ttk.Combobox(settings_frame, textvariable=self.folder_var, values=["Inbox", "Sent Items"])
         folder_combo.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+        folder_combo.bind("<Return>", lambda event: self.start_analysis())
 
         self.recursive_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(settings_frame, text="Include Subfolders", variable=self.recursive_var).grid(row=1, column=2, sticky="w", padx=5, pady=5)
@@ -82,6 +85,14 @@ class EmailAnalyzerGUI:
         self.results_text.tag_config("subheader", font=("Helvetica", 10, "bold"))
         self.results_text.tag_config("bullet", lmargin1=20, lmargin2=30)
         self.results_text.tag_config("email_ref", font=("Helvetica", 9, "italic"), foreground="gray")
+
+        # Initial state helpful message
+        self.results_text.config(state='normal')
+        self.results_text.insert(tk.END, "Enter your name and settings above, then click 'Analyze Emails' or press Enter to see results here.")
+        self.results_text.config(state='disabled')
+
+        # Set initial focus
+        self.name_entry.focus_set()
 
     def start_analysis(self):
         user_name = self.user_name_var.get().strip()
