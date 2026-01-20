@@ -60,13 +60,19 @@ class TestEmailAnalyzerSecurity(unittest.TestCase):
         app.date_range_var = MagicMock()
         app.date_range_var.get.return_value = 0
 
-        # Mock the analyzer functions to prevent side effects and errors
+        # Mock the analyzer functions, prevent side effects, and capture logs
         with patch("main.find_todos", return_value=[]), \
              patch("main.find_deadlines", return_value=[]), \
-             patch("main.find_name_mentions", return_value=[]):
+             patch("main.find_name_mentions", return_value=[]), \
+             self.assertLogs(level='WARNING') as cm:
 
-             # Run analysis directly
-             app.run_analysis("Test User")
+            # Run analysis directly
+            app.run_analysis("Test User")
+
+            # Verify that a warning was logged for truncation
+            self.assertEqual(len(cm.output), 1)
+            expected_log = f"Email 'Huge Email...' body too large ({len(huge_body)} chars). Truncating to {MAX_BODY_LENGTH}."
+            self.assertIn(expected_log, cm.output[0])
 
         # Verify split_sentences was called with truncated body
         self.assertTrue(mock_split.called)
