@@ -45,7 +45,7 @@ class EmailAnalyzerGUI:
         self.folder_var = tk.StringVar(value="Inbox")
         folder_combo = ttk.Combobox(settings_frame, textvariable=self.folder_var, values=["Inbox", "Sent Items"])
         folder_combo.grid(row=1, column=1, sticky="w", padx=5, pady=5)
-        folder_combo.bind("<Return>", lambda event: self.start_analysis())
+        folder_combo.bind("<Return>", self.start_analysis)
 
         self.recursive_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(settings_frame, text="Include Subfolders", variable=self.recursive_var).grid(row=1, column=2, sticky="w", padx=5, pady=5)
