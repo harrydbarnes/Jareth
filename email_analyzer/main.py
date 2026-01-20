@@ -5,6 +5,7 @@ import threading
 import sys
 import os
 import logging
+from contextlib import contextmanager
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -87,12 +88,20 @@ class EmailAnalyzerGUI:
         self.results_text.tag_config("email_ref", font=("Helvetica", 9, "italic"), foreground="gray")
 
         # Initial state helpful message
-        self.results_text.config(state='normal')
-        self.results_text.insert(tk.END, "Enter your name and settings above, then click 'Analyze Emails' or press Enter to see results here.")
-        self.results_text.config(state='disabled')
+        with self._editable_results_text():
+            self.results_text.insert(tk.END, "Enter your name and settings above, then click 'Analyze Emails' or press Enter to see results here.")
 
         # Set initial focus
         self.name_entry.focus_set()
+
+    @contextmanager
+    def _editable_results_text(self):
+        """Context manager to make the results text widget temporarily editable."""
+        self.results_text.config(state='normal')
+        try:
+            yield
+        finally:
+            self.results_text.config(state='disabled')
 
     def start_analysis(self):
         user_name = self.user_name_var.get().strip()
@@ -104,9 +113,9 @@ class EmailAnalyzerGUI:
         self.status_lbl.config(text="Analyzing... This may take a moment.")
         self.progress.pack(side="left", padx=10)
         self.progress.start()
-        self.results_text.config(state='normal')
-        self.results_text.delete(1.0, tk.END)
-        self.results_text.config(state='disabled')
+
+        with self._editable_results_text():
+            self.results_text.delete(1.0, tk.END)
 
         # Run in a separate thread to keep UI responsive
         self.analysis_thread = threading.Thread(target=self.run_analysis, args=(user_name,), daemon=True)
@@ -168,15 +177,14 @@ class EmailAnalyzerGUI:
     def display_results(self, todos, deadlines, mentions):
         self.progress.stop()
         self.progress.pack_forget()
-        self.results_text.config(state='normal')
 
-        self.results_text.insert(tk.END, "Analysis Results\n\n", "header")
+        with self._editable_results_text():
+            self.results_text.insert(tk.END, "Analysis Results\n\n", "header")
 
-        self._display_section("Outstanding Tasks / To-Dos", "🔴", todos)
-        self._display_section("Upcoming Deadlines", "⏰", deadlines)
-        self._display_section("Name Mentions", "📣", mentions)
+            self._display_section("Outstanding Tasks / To-Dos", "🔴", todos)
+            self._display_section("Upcoming Deadlines", "⏰", deadlines)
+            self._display_section("Name Mentions", "📣", mentions)
 
-        self.results_text.config(state='disabled')
         self.status_lbl.config(text=f"Analysis Complete. Found {len(todos)} tasks, {len(deadlines)} deadlines, {len(mentions)} mentions.")
         self.analyze_btn.config(state="normal")
 
