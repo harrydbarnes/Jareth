@@ -10,6 +10,39 @@ from typing import List, Union
 # This basic split works for many common email formats.
 SENTENCE_SPLIT_REGEX = re.compile(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s')
 
+# Compiled regex for find_todos
+TODO_KEYWORDS = [
+    "action item", "please complete", "task:", "to do:", "i need you to",
+    "can you", "could you please", "ensure that", "make sure to", "follow up on",
+    "let's aim to", "we need to", "important to do", "kindly address"
+]
+TODO_REGEX = re.compile(r'\b(?:' + '|'.join(map(re.escape, TODO_KEYWORDS)) + r')\b', re.IGNORECASE)
+
+# Compiled regex for find_deadlines
+DEADLINE_KEYWORDS = [
+    "due by", "deadline is", "by next week", "by EOD", "by COB", "by close of business",
+    "by tomorrow", "by end of day", "by end of the week", "by end of month",
+    "by Monday", "by Tuesday", "by Wednesday", "by Thursday", "by Friday",
+    "by Saturday", "by Sunday",
+    "by January", "by February", "by March", "by April", "by May", "by June",
+    "by July", "by August", "by September", "by October", "by November", "by December",
+    "by [0-9]{1,2}(st|nd|rd|th)? of", # e.g., by 1st of, by 2nd of, by 10th of
+    "within [0-9]+ days", "in the next [0-9]+ hours", "complete by"
+]
+# Pre-process keywords to handle [0-9] replacement for regex
+# We map keywords to their regex equivalent.
+DEADLINE_KEYWORDS_REGEX = [k.replace("[0-9]", "\\d") for k in DEADLINE_KEYWORDS]
+DEADLINE_REGEX = re.compile(r'\b(?:' + '|'.join(DEADLINE_KEYWORDS_REGEX) + r')\b', re.IGNORECASE)
+
+# More complex patterns for specific dates like MM/DD/YYYY, YYYY-MM-DD
+DEADLINE_DATE_PATTERNS = [
+    r"\bby\s+\d{1,2}/\d{1,2}(?:/\d{2,4})?\b", # by 12/25, by 12/25/2023
+    r"\bby\s+\d{4}-\d{2}-\d{2}\b",          # by 2023-12-25
+    r"\b(?:on|before)\s+\w+\s+\d{1,2}(?:st|nd|rd|th)?\b" # on March 15th
+]
+DEADLINE_DATE_REGEX = re.compile('|'.join(DEADLINE_DATE_PATTERNS), re.IGNORECASE)
+
+
 def split_sentences(text: str) -> List[str]:
     """
     Splits text into sentences using a regex.
@@ -42,22 +75,16 @@ def find_todos(email_body: Union[str, List[str]]) -> List[str]:
     if not email_body:
         return []
 
-    todo_keywords = [
-        "action item", "please complete", "task:", "to do:", "i need you to",
-        "can you", "could you please", "ensure that", "make sure to", "follow up on",
-        "let's aim to", "we need to", "important to do", "kindly address"
-    ]
-    
     found_todos: List[str] = []
     sentences = _ensure_sentences(email_body)
 
     for sentence in sentences:
         if not sentence.strip():
             continue
-        for keyword in todo_keywords:
-            if re.search(r'\b' + re.escape(keyword) + r'\b', sentence, re.IGNORECASE):
-                found_todos.append(sentence.strip())
-                break # Avoid adding the same sentence multiple times if it contains multiple keywords
+        # Use compiled regex for performance
+        if TODO_REGEX.search(sentence):
+            found_todos.append(sentence.strip())
+
     return found_todos
 
 def find_deadlines(email_body: Union[str, List[str]]) -> List[str]:
@@ -74,39 +101,21 @@ def find_deadlines(email_body: Union[str, List[str]]) -> List[str]:
     if not email_body:
         return []
 
-    deadline_keywords = [
-        "due by", "deadline is", "by next week", "by EOD", "by COB", "by close of business",
-        "by tomorrow", "by end of day", "by end of the week", "by end of month",
-        "by Monday", "by Tuesday", "by Wednesday", "by Thursday", "by Friday",
-        "by Saturday", "by Sunday",
-        "by January", "by February", "by March", "by April", "by May", "by June",
-        "by July", "by August", "by September", "by October", "by November", "by December",
-        "by [0-9]{1,2}(st|nd|rd|th)? of", # e.g., by 1st of, by 2nd of, by 10th of
-        "within [0-9]+ days", "in the next [0-9]+ hours", "complete by"
-    ]
-    # More complex patterns for specific dates like MM/DD/YYYY, YYYY-MM-DD
-    date_patterns = [
-        r"\bby\s+\d{1,2}/\d{1,2}(?:/\d{2,4})?\b", # by 12/25, by 12/25/2023
-        r"\bby\s+\d{4}-\d{2}-\d{2}\b",          # by 2023-12-25
-        r"\b(?:on|before)\s+\w+\s+\d{1,2}(?:st|nd|rd|th)?\b" # on March 15th
-    ]
-
     found_deadlines: List[str] = []
     sentences = _ensure_sentences(email_body)
 
     for sentence in sentences:
         if not sentence.strip():
             continue
-        # Check keyword-based phrases
-        for keyword in deadline_keywords:
-            if re.search(r'\b' + keyword.replace("[0-9]", "\\d") + r'\b', sentence, re.IGNORECASE):
-                found_deadlines.append(sentence.strip())
-                break # Next sentence
-        else: # Only if no keyword was found, check regex patterns
-            for pattern in date_patterns:
-                if re.search(pattern, sentence, re.IGNORECASE):
-                    found_deadlines.append(sentence.strip())
-                    break # Next sentence
+
+        # Check compiled keyword regex
+        if DEADLINE_REGEX.search(sentence):
+            found_deadlines.append(sentence.strip())
+            continue
+
+        # Check compiled date patterns regex
+        if DEADLINE_DATE_REGEX.search(sentence):
+            found_deadlines.append(sentence.strip())
     
     return found_deadlines
 
