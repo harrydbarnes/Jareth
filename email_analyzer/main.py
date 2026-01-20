@@ -9,6 +9,9 @@ import logging
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Security: Limit the size of email body processed to prevent DoS/Memory exhaustion
+MAX_BODY_LENGTH = 100000
+
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
@@ -118,6 +121,10 @@ class EmailAnalyzerGUI:
             for email in emails:
                 subject = email.get("subject", "(No Subject)")
                 body = email.get("body", "")
+
+                if len(body) > MAX_BODY_LENGTH:
+                    logging.warning(f"Email '{subject[:30]}...' body too large ({len(body)} chars). Truncating to {MAX_BODY_LENGTH}.")
+                    body = body[:MAX_BODY_LENGTH]
 
                 # Split sentences once
                 sentences = split_sentences(body)
