@@ -32,15 +32,16 @@ DEADLINE_KEYWORDS = [
 # Pre-process keywords to handle [0-9] replacement for regex
 # We map keywords to their regex equivalent.
 DEADLINE_KEYWORDS_REGEX = [k.replace("[0-9]", "\\d") for k in DEADLINE_KEYWORDS]
-DEADLINE_REGEX = re.compile(r'\b(?:' + '|'.join(DEADLINE_KEYWORDS_REGEX) + r')\b', re.IGNORECASE)
-
 # More complex patterns for specific dates like MM/DD/YYYY, YYYY-MM-DD
 DEADLINE_DATE_PATTERNS = [
     r"\bby\s+\d{1,2}/\d{1,2}(?:/\d{2,4})?\b", # by 12/25, by 12/25/2023
     r"\bby\s+\d{4}-\d{2}-\d{2}\b",          # by 2023-12-25
     r"\b(?:on|before)\s+\w+\s+\d{1,2}(?:st|nd|rd|th)?\b" # on March 15th
 ]
-DEADLINE_DATE_REGEX = re.compile('|'.join(DEADLINE_DATE_PATTERNS), re.IGNORECASE)
+# Combine keyword and date patterns into a single regex for efficiency
+deadline_keyword_pattern = r'\b(?:' + '|'.join(DEADLINE_KEYWORDS_REGEX) + r')\b'
+deadline_date_pattern = '|'.join(DEADLINE_DATE_PATTERNS)
+DEADLINE_REGEX = re.compile(f'{deadline_keyword_pattern}|{deadline_date_pattern}', re.IGNORECASE)
 
 
 def split_sentences(text: str) -> List[str]:
