@@ -68,28 +68,12 @@ def test_empty_input():
     assert find_name_mentions("", "John") == []
 
 def test_todo_edge_cases():
-    # "Another task: investigate" - The original code failed to find this due to regex \b issue with colon.
-    # Our optimized code preserves this behavior (unfortunately, but correctly preserving behavior).
-    # However, "Task: investigate" fails, but "This is a task: investigate" might match?
-    # "task:" is the keyword. \btask:\b matches " task: " but not " task:foo".
-
-    text = "This is a task: investigate."
-    # \b matches between ' ' and 't'.
-    # \b matches between ':' and ' '.
-    # So "This is a task: investigate" should match!
-
-    # Wait, earlier I tested `re.search(r'\btask:\b', 'Task: investigate')` and it failed.
-    # Because 'Task:' at start of string. Boundary at start (before T).
-    # Boundary after k (between k and :).
-    # BUT \b requires boundary.
-    # The regex is `\btask:\b`.
-    # It matches `task:` literally.
-    # And asserts boundary before `t` and after `:`.
-    # After `:`, if we have space... `:` is non-word. ` ` is non-word. NO BOUNDARY.
-    # So `\btask:\b` will NEVER match `task:` if followed by space.
-    # It only matches if followed by a WORD char?
-    # If followed by word char `a`, then `:` (non-word) -> `a` (word). Boundary exists!
-    # So `task:foo` matches!
+# Test edge case for keywords ending in non-word characters like ':'.
+# The regex `\btask:\b` will not match "Task: investigate" because there is
+# no word boundary between a colon and a space. This test confirms that
+# the optimized code preserves this behavior from the original implementation.
+# A match would occur if the character after the colon was a word character
+# (e.g., "task:foo").
 
     text_fail = "Task: investigate"
     assert find_todos(text_fail) == []
