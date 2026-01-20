@@ -103,7 +103,7 @@ class EmailAnalyzerGUI:
         finally:
             self.results_text.config(state='disabled')
 
-    def start_analysis(self):
+    def start_analysis(self, event=None):
         user_name = self.user_name_var.get().strip()
         if not user_name:
             messagebox.showwarning("Input Required", "Please enter your name for mention tracking.")
