@@ -124,7 +124,7 @@ def _get_name_mention_regex(user_name: str):
     Returns a compiled regex for finding mentions of a user name.
     Cached to avoid recompilation and string concatenation overhead.
     """
-    return re.compile(r'\b' + re.escape(user_name) + r'\b', re.IGNORECASE)
+    return re.compile(rf'\b{re.escape(user_name)}\b', re.IGNORECASE)
 
 def find_name_mentions(email_body: Union[str, List[str]], user_name: str) -> List[str]:
     """
