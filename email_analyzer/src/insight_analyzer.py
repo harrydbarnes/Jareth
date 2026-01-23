@@ -118,7 +118,7 @@ def find_deadlines(email_body: Union[str, List[str]]) -> List[str]:
     
     return found_deadlines
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=128)
 def _get_name_mention_regex(user_name: str):
     """
     Returns a compiled regex for finding mentions of a user name.
@@ -144,7 +144,8 @@ def find_name_mentions(email_body: Union[str, List[str]], user_name: str) -> Lis
     found_mentions: List[str] = []
 
     # Use cached compiled regex
-    regex = _get_name_mention_regex(user_name)
+    # Strip user_name to prevent regex issues (e.g., boundaries around whitespace)
+    regex = _get_name_mention_regex(user_name.strip())
     
     sentences = _ensure_sentences(email_body)
 
