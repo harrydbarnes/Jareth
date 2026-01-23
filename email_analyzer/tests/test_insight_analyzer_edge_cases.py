@@ -1,12 +1,6 @@
 
 import pytest
-import sys
-# Try absolute import from repo root
-try:
-    from email_analyzer.src.insight_analyzer import find_name_mentions
-except ImportError:
-    # Fallback to existing pattern
-    from src.insight_analyzer import find_name_mentions
+from src.insight_analyzer import find_name_mentions
 
 def test_find_name_mentions_whitespace():
     sample_text = "Hello John, how are you?"
