@@ -71,7 +71,7 @@ This project implements several performance strategies to ensure responsiveness:
 
 ## 🧪 Testing
 
-Run the test suite from the repository root with `pytest`:
+Run the test suite from within the `email_analyzer` directory:
 
 ```bash
 pytest
