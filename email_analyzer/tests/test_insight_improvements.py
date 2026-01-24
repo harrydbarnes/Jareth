@@ -14,22 +14,23 @@ def test_symbol_todo_boundaries(text, expected_todo):
     todos = find_todos(text)
     assert expected_todo in todos
 
-def test_robust_sentence_splitting():
+@pytest.mark.parametrize("text, expected_sentences", [
+    (
+        "Dr. Smith is here. Mr. Jones is too. Ms. Doe agrees.",
+        ["Dr. Smith is here.", "Mr. Jones is too.", "Ms. Doe agrees."]
+    ),
+    (
+        "Hello world. This is a test.",
+        ["Hello world.", "This is a test."]
+    )
+])
+def test_robust_sentence_splitting(text, expected_sentences):
     """
     Test that abbreviations do not split sentences, but actual sentence boundaries do.
     """
     # Fix #4: abbreviations should not split sentences
-    text = "Dr. Smith is here. Mr. Jones is too. Ms. Doe agrees."
     sentences = split_sentences(text)
-    assert len(sentences) == 3
-    assert sentences[0] == "Dr. Smith is here."
-    assert sentences[1] == "Mr. Jones is too."
-    assert sentences[2] == "Ms. Doe agrees."
-
-    # Should still split on actual sentences
-    text2 = "Hello world. This is a test."
-    sentences2 = split_sentences(text2)
-    assert len(sentences2) == 2
+    assert sentences == expected_sentences
 
 @pytest.mark.parametrize("text_with_deadline", [
     "This needs to be done ASAP.",
