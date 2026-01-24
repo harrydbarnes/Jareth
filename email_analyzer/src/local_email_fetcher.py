@@ -29,7 +29,7 @@ class LocalEmailFetcher:
                      recursive: bool = False,
                      date_range_days: int = 0,
                      subject_filter: str = None,
-                     progress_callback=None) -> List[Dict[str, Any]]:
+                     progress_callback: Optional[Callable[[int], None]] = None) -> List[Dict[str, Any]]:
         """
         Fetches emails from the specified folder.
 
