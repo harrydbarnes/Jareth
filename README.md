@@ -35,17 +35,17 @@ The tool provides a user-friendly GUI built with `tkinter` to configure settings
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
-    cd email_analyzer
+    cd <repository-directory>
     ```
 
 2.  **Install dependencies:**
     ```bash
-    pip install -r requirements.txt
+    pip install -r email_analyzer/requirements.txt
     ```
 
 3.  **Run the application:**
     ```bash
-    python main.py
+    python email_analyzer/main.py
     ```
 
 4.  **Using the Tool:**
@@ -71,7 +71,7 @@ This project implements several performance strategies to ensure responsiveness:
 
 ## 🧪 Testing
 
-Run the test suite with `pytest`:
+Run the test suite from the repository root with `pytest`:
 
 ```bash
 pytest
