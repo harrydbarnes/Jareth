@@ -1,6 +1,6 @@
 import datetime
 import win32com.client
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Callable
 
 import logging
 

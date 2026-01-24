@@ -1,56 +1,51 @@
-import unittest
-import sys
-import os
+import pytest
+from src.insight_analyzer import find_todos, split_sentences, find_deadlines
 
-# Ensure src is in path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+@pytest.mark.parametrize("text, expected_todo", [
+    ("Task: investigate the issue.", "Task: investigate the issue."),
+    ("We need to ensure that this works.", "We need to ensure that this works."),
+    ("Here is a task:", "Here is a task:")
+])
+def test_symbol_todo_boundaries(text, expected_todo):
+    """
+    Test various TODO patterns including symbol boundaries and standard keywords.
+    """
+    # Fix #2: "task:" should match "Task: investigate"
+    todos = find_todos(text)
+    assert expected_todo in todos
 
-from email_analyzer.src.insight_analyzer import find_todos, split_sentences, find_deadlines
+def test_robust_sentence_splitting():
+    """
+    Test that abbreviations do not split sentences, but actual sentence boundaries do.
+    """
+    # Fix #4: abbreviations should not split sentences
+    text = "Dr. Smith is here. Mr. Jones is too. Ms. Doe agrees."
+    sentences = split_sentences(text)
+    assert len(sentences) == 3
+    assert sentences[0] == "Dr. Smith is here."
+    assert sentences[1] == "Mr. Jones is too."
+    assert sentences[2] == "Ms. Doe agrees."
 
-class TestInsightImprovements(unittest.TestCase):
+    # Should still split on actual sentences
+    text2 = "Hello world. This is a test."
+    sentences2 = split_sentences(text2)
+    assert len(sentences2) == 2
 
-    def test_symbol_todo_boundaries(self):
-        # Fix #2: "task:" should match "Task: investigate"
-        text = "Task: investigate the issue."
-        todos = find_todos(text)
-        self.assertIn("Task: investigate the issue.", todos)
+@pytest.mark.parametrize("keyword", ["ASAP", "Action Required", "COB", "EOD", "strict deadline"])
+def test_expanded_deadline_keywords(keyword):
+    """
+    Test that new deadline keywords are detected.
+    """
+    # Fix #6: New keywords
+    text = f"This needs to be done {keyword}."
+    deadlines = find_deadlines(text)
+    assert deadlines, f"Failed to match keyword: {keyword}"
 
-        # Should also match standard keywords
-        text2 = "We need to ensure that this works."
-        todos2 = find_todos(text2)
-        self.assertIn("We need to ensure that this works.", todos2)
-
-        # Should match symbol keywords at end of sentence
-        text3 = "Here is a task:"
-        todos3 = find_todos(text3)
-        self.assertIn("Here is a task:", todos3)
-
-    def test_robust_sentence_splitting(self):
-        # Fix #4: abbreviations should not split sentences
-        text = "Dr. Smith is here. Mr. Jones is too. Ms. Doe agrees."
-        sentences = split_sentences(text)
-        self.assertEqual(len(sentences), 3)
-        self.assertEqual(sentences[0], "Dr. Smith is here.")
-        self.assertEqual(sentences[1], "Mr. Jones is too.")
-        self.assertEqual(sentences[2], "Ms. Doe agrees.")
-
-        # Should still split on actual sentences
-        text2 = "Hello world. This is a test."
-        sentences2 = split_sentences(text2)
-        self.assertEqual(len(sentences2), 2)
-
-    def test_expanded_deadline_keywords(self):
-        # Fix #6: New keywords
-        keywords = ["ASAP", "Action Required", "COB", "EOD", "strict deadline"]
-        for kw in keywords:
-            text = f"This needs to be done {kw}."
-            deadlines = find_deadlines(text)
-            self.assertTrue(deadlines, f"Failed to match keyword: {kw}")
-
-        # Check "strict deadline"
-        text = "There is a strict deadline for this."
-        deadlines = find_deadlines(text)
-        self.assertTrue(deadlines)
-
-if __name__ == '__main__':
-    unittest.main()
+def test_strict_deadline_phrase():
+    """
+    Test specifically for 'strict deadline' phrase in a sentence.
+    """
+    # Check "strict deadline"
+    text = "There is a strict deadline for this."
+    deadlines = find_deadlines(text)
+    assert deadlines
