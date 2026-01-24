@@ -6,6 +6,7 @@ import sys
 import os
 import logging
 from contextlib import contextmanager
+import pythoncom
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -65,12 +66,21 @@ class EmailAnalyzerGUI:
         ttk.Radiobutton(date_frame, text="Last 14 Days", variable=self.date_range_var, value=14).pack(side="left", padx=5)
         ttk.Radiobutton(date_frame, text="Last 30 Days", variable=self.date_range_var, value=30).pack(side="left", padx=5)
 
+        # Row 3: Subject Filter
+        ttk.Label(settings_frame, text="Subject Contains:").grid(row=3, column=0, sticky="w", padx=5, pady=5)
+        self.subject_filter_var = tk.StringVar()
+        self.subject_filter_entry = ttk.Entry(settings_frame, textvariable=self.subject_filter_var, width=30)
+        self.subject_filter_entry.grid(row=3, column=1, sticky="w", padx=5, pady=5)
+
         # --- Action Section ---
         action_frame = ttk.Frame(root, padding="10")
         action_frame.pack(fill="x", padx=10)
 
         self.analyze_btn = ttk.Button(action_frame, text="Analyze Emails", command=self.start_analysis)
         self.analyze_btn.pack(side="left")
+
+        self.copy_btn = ttk.Button(action_frame, text="Copy Report", command=self.copy_results)
+        self.copy_btn.pack(side="left", padx=5)
 
         self.status_lbl = ttk.Label(action_frame, text="Ready")
         self.status_lbl.pack(side="left", padx=10)
@@ -124,13 +134,24 @@ class EmailAnalyzerGUI:
         self.analysis_thread = threading.Thread(target=self.run_analysis, args=(user_name,), daemon=True)
         self.analysis_thread.start()
 
+    def copy_results(self):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(self.results_text.get("1.0", tk.END))
+        messagebox.showinfo("Copied", "Results copied to clipboard!")
+
+    def update_progress(self, count):
+        self.root.after(0, lambda: self.status_lbl.config(text=f"Analyzing... Processed {count} emails."))
+
     def run_analysis(self, user_name):
+        pythoncom.CoInitialize()  # Critical for pywin32 in threads
         try:
             fetcher = LocalEmailFetcher()
             emails = fetcher.fetch_emails(
                 folder_name=self.folder_var.get(),
                 recursive=self.recursive_var.get(),
-                date_range_days=self.date_range_var.get()
+                date_range_days=self.date_range_var.get(),
+                subject_filter=self.subject_filter_var.get(),
+                progress_callback=self.update_progress
             )
 
             # Analyze
@@ -170,6 +191,8 @@ class EmailAnalyzerGUI:
         except Exception as e:
             logging.exception("An error occurred during analysis")
             self.root.after(0, self.show_error, str(e))
+        finally:
+            pythoncom.CoUninitialize()
 
     def _display_section(self, title: str, icon: str, items: list):
         """Helper to display a section of results in the text widget."""
