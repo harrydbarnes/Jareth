@@ -31,21 +31,18 @@ def test_robust_sentence_splitting():
     sentences2 = split_sentences(text2)
     assert len(sentences2) == 2
 
-@pytest.mark.parametrize("keyword", ["ASAP", "Action Required", "COB", "EOD", "strict deadline"])
-def test_expanded_deadline_keywords(keyword):
+@pytest.mark.parametrize("text_with_deadline", [
+    "This needs to be done ASAP.",
+    "This needs to be done Action Required.",
+    "This needs to be done COB.",
+    "This needs to be done EOD.",
+    "This needs to be done strict deadline.",
+    "There is a strict deadline for this.",
+])
+def test_expanded_deadline_keywords(text_with_deadline):
     """
-    Test that new deadline keywords are detected.
+    Test that new deadline keywords are detected in various sentences.
     """
     # Fix #6: New keywords
-    text = f"This needs to be done {keyword}."
-    deadlines = find_deadlines(text)
-    assert deadlines, f"Failed to match keyword: {keyword}"
-
-def test_strict_deadline_phrase():
-    """
-    Test specifically for 'strict deadline' phrase in a sentence.
-    """
-    # Check "strict deadline"
-    text = "There is a strict deadline for this."
-    deadlines = find_deadlines(text)
-    assert deadlines
+    deadlines = find_deadlines(text_with_deadline)
+    assert deadlines, f"Failed to find deadline in: '{text_with_deadline}'"
