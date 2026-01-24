@@ -27,7 +27,9 @@ class LocalEmailFetcher:
     def fetch_emails(self,
                      folder_name: str = "Inbox",
                      recursive: bool = False,
-                     date_range_days: int = 0) -> List[Dict[str, Any]]:
+                     date_range_days: int = 0,
+                     subject_filter: str = None,
+                     progress_callback=None) -> List[Dict[str, Any]]:
         """
         Fetches emails from the specified folder.
 
@@ -35,6 +37,8 @@ class LocalEmailFetcher:
             folder_name: The name of the folder to search in (default: "Inbox").
             recursive: Whether to search subfolders recursively.
             date_range_days: Number of days back to search. 0 means "Today".
+            subject_filter: Optional string to filter emails by subject.
+            progress_callback: Optional callback function to report progress (called with count).
 
         Returns:
             A list of dictionaries containing email details.
@@ -69,7 +73,14 @@ class LocalEmailFetcher:
         cutoff_date = cutoff_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
         emails = []
-        self._process_folder(folder, recursive, cutoff_date, emails)
+        processed_count = [0]
+
+        def _on_progress():
+            processed_count[0] += 1
+            if progress_callback and processed_count[0] % 10 == 0:
+                progress_callback(processed_count[0])
+
+        self._process_folder(folder, recursive, cutoff_date, emails, subject_filter, _on_progress)
         return emails
 
     def _find_folder(self, parent_folder, folder_name):
@@ -104,7 +115,7 @@ class LocalEmailFetcher:
 
         return target_folder
 
-    def _process_folder(self, folder, recursive, cutoff_date, emails_list):
+    def _process_folder(self, folder, recursive, cutoff_date, emails_list, subject_filter=None, on_progress=None):
         items = folder.Items
         sorted_success = False
 
@@ -144,6 +155,10 @@ class LocalEmailFetcher:
                     else:
                         continue
 
+                # Subject filter check
+                if subject_filter and subject_filter.lower() not in item.Subject.lower():
+                    continue
+
                 email_data = {
                     "subject": item.Subject,
                     "body": item.Body,
@@ -151,6 +166,9 @@ class LocalEmailFetcher:
                     "received_time": str(received_time)
                 }
                 emails_list.append(email_data)
+
+                if on_progress:
+                    on_progress()
 
             except Exception as e:
                 # Skip individual items that cause errors
@@ -166,6 +184,6 @@ class LocalEmailFetcher:
         if recursive:
             try:
                 for subfolder in folder.Folders:
-                    self._process_folder(subfolder, True, cutoff_date, emails_list)
+                    self._process_folder(subfolder, True, cutoff_date, emails_list, subject_filter, on_progress)
             except Exception as e:
                  logger.warning(f"Error accessing subfolders of '{folder.Name}': {e}")

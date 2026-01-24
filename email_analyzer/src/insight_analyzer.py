@@ -9,7 +9,9 @@ from functools import lru_cache
 # Compile regex at module level to avoid recompilation and reuse across functions
 # Split email into sentences. A more robust sentence tokenizer could be used for complex cases.
 # This basic split works for many common email formats.
-SENTENCE_SPLIT_REGEX = re.compile(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s')
+SENTENCE_SPLIT_REGEX = re.compile(
+    r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<!Mr\.)(?<!Ms\.)(?<!Dr\.)(?<=\.|\?|\!)\s'
+)
 
 # Compiled regex for find_todos
 TODO_KEYWORDS = [
@@ -17,7 +19,17 @@ TODO_KEYWORDS = [
     "can you", "could you please", "ensure that", "make sure to", "follow up on",
     "let's aim to", "we need to", "important to do", "kindly address"
 ]
-TODO_REGEX = re.compile(r'\b(?:' + '|'.join(map(re.escape, TODO_KEYWORDS)) + r')\b', re.IGNORECASE)
+
+# Split keywords into two groups
+alphanumeric_todos = [k for k in TODO_KEYWORDS if k[-1].isalnum()]
+symbol_todos = [k for k in TODO_KEYWORDS if not k[-1].isalnum()]
+
+# Create pattern: \b(alpha)\b OR \b(symbol)(?=\s|$)
+todo_pattern = (
+    r'\b(?:' + '|'.join(map(re.escape, alphanumeric_todos)) + r')\b|' +
+    r'\b(?:' + '|'.join(map(re.escape, symbol_todos)) + r')(?=\s|$)'
+)
+TODO_REGEX = re.compile(todo_pattern, re.IGNORECASE)
 
 # Compiled regex for find_deadlines
 DEADLINE_KEYWORDS = [
@@ -28,7 +40,8 @@ DEADLINE_KEYWORDS = [
     "by January", "by February", "by March", "by April", "by May", "by June",
     "by July", "by August", "by September", "by October", "by November", "by December",
     "by [0-9]{1,2}(st|nd|rd|th)? of", # e.g., by 1st of, by 2nd of, by 10th of
-    "within [0-9]+ days", "in the next [0-9]+ hours", "complete by"
+    "within [0-9]+ days", "in the next [0-9]+ hours", "complete by",
+    "ASAP", "Action Required", "COB", "EOD", "strict deadline"
 ]
 # Pre-process keywords to handle [0-9] replacement for regex
 # We map keywords to their regex equivalent.
